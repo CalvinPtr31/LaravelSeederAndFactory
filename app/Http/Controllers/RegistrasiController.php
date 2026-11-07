@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Registrasi;
+use App\Models\KrsKhs;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RegistrasiController extends Controller
 {
@@ -12,7 +14,29 @@ class RegistrasiController extends Controller
      */
     public function index()
     {
-        //
+        $nim = Auth::user()->nim; // <-- user yang Log In
+        $registrasi = Registrasi::where('nim', $nim)
+            ->first(); // <-- apa sdh Registrasi
+        // Jika belum registrasi, buat baris Registrasi
+        if (! $registrasi) {
+            $registrasi = Registrasi::create([
+                'tanggal' => now(),
+                'nim' => $nim,
+            ]);
+        }
+        $noReg = $registrasi->noReg; // <-- cacat noReg nya
+        session(['noReg' => $noReg]); // <-- Simpan ke session
+        $krskhs = KrsKhs::with([ // <-- baca semua data registrasi
+            'jadwal.matakuliah',
+            'jadwal.dosen',
+        ])
+            ->where('noReg', $noReg) // <-- berdasarkan noReg
+            ->get();
+
+        // Kirim ke View untuk ditampilkan
+        return view('registrasi.index', compact('registrasi', 'krskhs'));
+        // $data = \App\Models\Registrasi::with(['mahasiswa'])->get();
+        // return view('registrasi.index', compact('data'));
     }
 
     /**
